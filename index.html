@@ -5,9 +5,31 @@
 
 <p><a href=https://mirabernstein.github.io/probmods_mc2019/homework1.pdf>Homework #1</a><p>
 
-<p> The homework today does not require any programming. But if you want a peek at 
-how all this looks in WebPPL, see if you can make sense of 
-<a href=https://mirabernstein.github.io/probmods_mc2019/sneak_peak.html>this</a></p>.
+<p> The homework today does not require any programming (but you should still do it). </p?>
+
+<p> If you want a peek at how all this looks in WebPPL, go to the 
+<a href=http://webppl.org>main WebPPL webpage</a> and paste the following code in the codebox:
+</p>
+
+<pre><code>
+var model = function(){
+  var just_a_coin = flip(0.5)
+  var q = just_a_coin? 0.5 : uniform(0, 1)
+  var num_heads = Binomial({n:13, p:q})
+  observe(num_heads, 10)
+  return {
+    just_a_coin: just_a_coin,
+    q: q,
+    next_outcome: (flip(q)? "H":"T")
+  }
+}
+
+var opts = {method: "rejection", samples: 1000}
+var posterior = Infer(opts, model)
+viz.marginals(posterior)
+</code></pre>
+
+<p>Play around with the code and see if you understand what's happening. We'll talk more about it tomorrow. </p>
 
 <!-- <p><a href=https://www.desmos.com/calculator/czfo60lqsl>Desmos demo from class</a><p> --!>
 
