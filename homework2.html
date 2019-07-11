@@ -140,6 +140,7 @@ Functions are easy: they're just a kind of variable.
 var sum_of_3_dice = function(){
   return randomInteger(6)+randomInteger(6)+randomInteger(6)+3 //because randomInteger(6) goes from 0 to 5
 }
+sum_of_3_dice()
 </code></pre>
 
 
@@ -175,14 +176,14 @@ var sum_to_10 = function(){
   var d1 = randomInteger(6)+1
   var d2 = randomInteger(6)+1
   var d3 = randomInteger(6)+1
-  condition(d1+d2+d3==10)       \\ note the condition!
+  condition(d1+d2+d3==10)			//note the condition!
   return {
     d1: d1,
     d2: d2
   }  
 }
 
-var Sum_to_10 = Infer(sum_to_10)
+var Sum_to_10 = Infer({method:"enumerate"}, sum_to_10)
 viz(Sum_to_10)
 viz.marginals(Sum_to_10)
 </code></pre>
@@ -236,7 +237,7 @@ var MCSP_model = function(){
   }
 }
 
-var MCSP_q = Infer({method: "rejection", samples: 5000},MCSP_model)
+var MCSP_q = Infer({method: "rejection", samples: 2000},MCSP_model)
 viz.marginals(MCSP_q)
 </code></pre>
 
@@ -258,7 +259,7 @@ var complex_model = function(){
 
 }
 
-var posterior = Infer({method: "rejection", samples: 5000}, complex_model)
+var posterior = Infer({method: "rejection", samples: 2000}, complex_model)
 viz.marginals(posterior)
 
 </code></pre>
