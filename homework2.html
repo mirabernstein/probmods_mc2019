@@ -1,0 +1,202 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+     body {
+         font-family: Menlo;
+         font-size: 12px;
+     }
+
+     pre {
+         border: 1px solid black;
+         border-radius: 2px;
+         margin: 0;
+         padding: 4px;
+     }
+
+     pre > code {
+         color: #bfbfbf;
+     }
+
+
+     .col {
+         width: 40%;
+         min-width: 600px;
+         margin: 1em;
+         float: left
+     }
+
+     canvas.paper {
+         border: 1px solid gray;
+     }
+
+    </style>
+    <link rel='stylesheet' type='text/css' href='webppl-editor.css'>
+    <link rel='stylesheet' type='text/css' href='webppl-viz.css'>
+    <script src="webppl-editor.js"></script>
+    <script src="jquery.js"></script>
+    <script src="paper.js"></script>
+    <script src="draw.js"></script>
+	<script src="webppl-viz.js"></script>
+  </head>
+  <body>
+
+
+
+
+<!-- 
+Instructions:
+
+Place text in <h1>Example</h1> to make headers. Replace 1 with larger numbers for subheaders.
+
+To insert a code box, type <pre><code></code></pre>. If you want the box pre-filled, you can put anything you want in the middle, as in 
+
+<pre><code>flip() ? flip(.7) : flip(.1)</code></pre>
+
+Happy coding! --!>
+
+
+
+
+
+<!-- ONLY EDIT BELOW THIS --!>
+
+
+
+
+
+
+<h1>Homework 2: WebPPL</h1>
+
+<h2>The Basics</h2>
+
+<p>
+The function <b>flip</b> has no arguments. <br />
+When called, it outputs <b>true</b> or <b>false</b> with equal probability. <br />
+Try pressing "run" several times and see what happens.
+</p>
+
+<pre><code>
+flip()
+</code></pre>
+
+<p>
+You can also give <b>flip</b> an input between 0 to 1. <br />
+For instance, <b>flip(0.2)</b> outputs "true" with probability 0.2. <br />
+</p>
+<p>
+We often use <b>flip</b> as a king of probabilistic <b>if</b> statement. The syntax is:
+<pre><code>
+flip(.7)? "Likely outcome": "Unlikely outcome"
+</code></pre>
+
+<p>
+Variables can be of any type: numbers, strings, lists, or more complex structures.</br>
+For example, let's set the variable <b>data</b> to be a list of 100 independent outputs 
+of <b> flip </b> function.
+</p>
+
+<pre><code>
+var data = repeat(100,flip)
+print(data)
+viz(data)
+</code></pre>
+
+<p>
+The function "viz" is an all-purpose visualization function. <br />
+When applied to a list of values, it produces a bar graph. </p>
+</p>
+
+<p>
+There are many other probability distributions built into WebPPL aside from <b> flip</b>. </br>
+You can find the full list of distributions 
+<a href=https://webppl.readthedocs.io/en/master/distributions.html> here</a>. 
+Note that the name of the distribution is usually capitalized and the name of the function
+that samples from it is not.
+</p>
+
+<code><pre>
+uniform(0,1)
+viz(Uniform({0,1}))
+</code></pre>
+
+<code><pre>
+gaussian(0,1)
+viz(Gaussian({0,1}))   // Gaussian is another name for the normal distribution
+</code></pre>
+
+<code><pre>
+beta(3,10)
+viz(Beta({3,10})
+</code></pre>
+
+
+
+
+
+
+
+
+<p>Functions are also variables, and are basically defined in the same way. </p>
+<code><pre>
+var sum_of_3_dice = function(){
+  return randomInteger(6)+randomInteger(6)+randomInteger(6)+3 //because randonInteger(6) goes from 0 to 5
+}
+</code></pre>
+
+
+<p>
+The most important thing that WebPPL does is <b> Infer </b> probability distributions based 
+on functions that sample from those distributions. 
+</p>
+
+<code><pre>
+var sum_of_3_dice = function(){
+  return randomInteger(6)+randomInteger(6)+randomInteger(6)+3 //because randonInteger(6) goes from 0 to 5
+}
+var Sum_of_3_dice = Infer(sum_of_3_dice)
+viz(Sum_of_3_dice)
+sample(Sum_of_3_dice)
+</code></pre>
+
+<b> Important: </b> The output of <b>Infer</b> is an object of type</br>
+"probability distribution". It's not a function or a number. You can sample from it, 
+you can graph it, and as we'll see soon, you can condition on it.
+
+
+
+
+
+
+<!-- ONLY EDIT ABOVE THIS --!>
+
+
+
+
+</body>
+
+<script>
+
+   // load scratch pad contents
+
+   $("#ed-scratch code").text(localStorage.getItem('ed-scratch'));
+
+   var scratchComp;
+   $("pre").map(function(i,el) {
+       var comp = wpEditor.setup(el, {language: "webppl"});
+       if (el.id == 'ed-scratch') {
+           scratchComp = comp;
+       }
+   });
+
+   // save scratch pad contents
+
+   window.onbeforeunload = function() { localStorage.setItem('ed-scratch', scratchComp.getCode()) }
+
+   var throwString = function() { throw 'string error' };
+  </script>
+
+
+  <script src="//s3-us-west-2.amazonaws.com/cdn.webppl.org/webppl-v0.9.7.js"></script>
+  
+</html>
