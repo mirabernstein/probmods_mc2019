@@ -116,37 +116,35 @@ that samples from it is not.
 </p>
 
 <code><pre>
+viz(Uniform({a:0,b:1}))
 uniform(0,1)
-viz(Uniform({0,1}))
 </code></pre>
 
 <code><pre>
+viz(Gaussian({mu:0,sigma:1}))   // Gaussian is another name for the normal distribution
 gaussian(0,1)
-viz(Gaussian({0,1}))   // Gaussian is another name for the normal distribution
 </code></pre>
 
 <code><pre>
+viz(Beta({a:3,b:10}))
 beta(3,10)
-viz(Beta({3,10})
 </code></pre>
 
 
-
-
-
-
-
-
-<p>Functions are also variables, and are basically defined in the same way. </p>
+<p> 
+We can also create our own functions and our own distributions. </br>
+Functions are easy: they're just a kind of variable. 
+(WebPPL is entirely built on functional programming.)
+</p>
 <code><pre>
 var sum_of_3_dice = function(){
-  return randomInteger(6)+randomInteger(6)+randomInteger(6)+3 //because randonInteger(6) goes from 0 to 5
+  return randomInteger(6)+randomInteger(6)+randomInteger(6)+3 //because randomInteger(6) goes from 0 to 5
 }
 </code></pre>
 
 
 <p>
-The most important thing that WebPPL does is <b> Infer </b> probability distributions based 
+The most important thing that WebPPL does is to <b> Infer </b> probability distributions based 
 on functions that sample from those distributions. 
 </p>
 
@@ -154,18 +152,116 @@ on functions that sample from those distributions.
 var sum_of_3_dice = function(){
   return randomInteger(6)+randomInteger(6)+randomInteger(6)+3 //because randonInteger(6) goes from 0 to 5
 }
-var Sum_of_3_dice = Infer(sum_of_3_dice)
+var Sum_of_3_dice = Infer({method:"enumerate"},sum_of_3_dice)
 viz(Sum_of_3_dice)
 sample(Sum_of_3_dice)
 </code></pre>
 
-<b> Important: </b> The output of <b>Infer</b> is an object of type</br>
+<p>
+In this case, figuring out the probability distribution was easy: we just told <b>Infer</b> 
+to enumerate all the possibilities and find their probabilities. In other cases, the task 
+is much harder. <b> Infer</b> has lots of different methods, which we'll discuss later.
+
+
+<p>
+<b> Important: </b> The output of <b>Infer</b> is an object of type
 "probability distribution". It's not a function or a number. You can sample from it, 
 you can graph it, and as we'll see soon, you can condition on it.
+</p>
+
+<p> <b> Infer </b> can also handle conditional probabilities:
+<code><pre>
+var sum_to_10 = function(){
+  var d1 = randomInteger(6)+1
+  var d2 = randomInteger(6)+1
+  var d3 = randomInteger(6)+1
+  condition(d1+d2+d3==10)       \\ note the condition!
+  return {
+    d1: d1,
+    d2: d2
+  }  
+}
+
+var Sum_to_10 = Infer(sum_to_10)
+viz(Sum_to_10)
+viz.marginals(Sum_to_10)
+</code></pre>
 
 
+<p>
+Sometimes it's useful to have a sampling function choose its value only once and then
+stick to it. This is called <b> memoizing </b>.
+
+<code><pre>
+var memoized_flip = mem(flip);
+[memoized_flip(), memoized_flip(), memoized_flip()]
+</code></pre>
 
 
+<code><pre>
+var topics = ["topology", "algebra", "probability"]
+
+var favorite_math = mem(function(person) {
+  return uniformDraw(topics)
+});
+
+[favorite_math('Alice'), favorite_math('Alice'), favorite_math('Alice'), favorite_math('Bob')]
+</code></pre>
+
+<h2> Assignment: </h2>
+
+<p> 
+1. Play around with WebPPL till you get more comfortable. You can use the codeboxes on this 
+page or the editor at <a href=http://webppl.org> the main WebPPL webpage</a>.
+</p>
+
+
+<p>
+2. Do Exercises 1 and 4 from 
+<a href=http://probmods.org/exercises/conditioning.html>here</a>.
+(Exercise 4 refers to the code in Exercise 3b.)
+</p>
+
+
+3. Here is our MCSP model from class (assuming we believe the coin is actually MCSP).
+<code><pre>
+var MCSP_model = function(){
+  var q = uniform(0, 1)
+  var num_heads = Binomial({n:13, p:q})
+  observe(num_heads, 10)
+  var q_greater_than_70 = function() {if (q>0.7) {true} else {false}}
+  return {
+    q: q,
+    q_greater_than_70: q_greater_than_70()
+  }
+}
+
+var MCSP_q = Infer({method: "rejection", samples: 5000},MCSP_model)
+viz.marginals(MCSP_q)
+</code></pre>
+
+<p> (Note: instead of <b> condition </b>, I used <b> observe </b>. With discrete ditributions,
+both are fine. With continuous ones, you have to use <b> observe </b>.)
+</p>
+
+<p>
+Now see if you can write down our more complex "MCSP vs fair coin" model from class. 
+Your model should be a function that returns the probability that the coin is MCSP (vs fair), 
+the value of q that was used, and a coin flip using that q. For <b>Infer</b>, use
+<b> {method: "rejection", samples: 1000} </b>.
+</p>
+
+<code><pre>
+var complex_model = function(){
+
+// Your code here.
+
+}
+
+var posterior = Infer({method: "rejection", samples: 5000}, complex_model)
+viz.marginals(posterior)
+
+</code></pre>
 
 
 <!-- ONLY EDIT ABOVE THIS --!>
