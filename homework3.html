@@ -1,0 +1,212 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+     body {
+         font-family: Menlo;
+         font-size: 12px;
+     }
+
+     pre {
+         border: 1px solid black;
+         border-radius: 2px;
+         margin: 0;
+         padding: 4px;
+     }
+
+     pre > code {
+         color: #bfbfbf;
+     }
+
+
+     .col {
+         width: 40%;
+         min-width: 600px;
+         margin: 1em;
+         float: left
+     }
+
+     canvas.paper {
+         border: 1px solid gray;
+     }
+
+    </style>
+    <link rel='stylesheet' type='text/css' href='webppl-editor.css'>
+    <link rel='stylesheet' type='text/css' href='webppl-viz.css'>
+    <script src="webppl-editor.js"></script>
+    <script src="jquery.js"></script>
+    <script src="paper.js"></script>
+    <script src="draw.js"></script>
+	<script src="webppl-viz.js"></script>
+  </head>
+  <body>
+
+
+
+
+<!-- 
+Instructions:
+
+Place text in <h1>Example</h1> to make headers. Replace 1 with larger numbers for subheaders.
+
+To insert a code box, type <pre><code></code></pre>. If you want the box pre-filled, you can put anything you want in the middle, as in 
+
+<pre><code>flip() ? flip(.7) : flip(.1)</code></pre>
+
+Happy coding! --!>
+
+
+
+
+
+<!-- ONLY EDIT BELOW THIS --!>
+
+<h3> Part 1: Let's get acquainted with some distributions </h3>
+
+<h4> The categorical distribution </h4>
+<p>
+The distribution  has two parameters: two vectors, <b>vs</b> and <b>ps</b>, which have to the same length.
+</p>
+<p>
+The easiest way to think of the  distribution <b> Categorical({vs,ps})</b> is to imagine drawing a marble from a bag of colored marbles. Say you have a bag where half the marbles are blue, a third are red, and a sixth are green. Then <b>vs</b> would be the vector <b>["blue", "red", "green"]</b> and <b>ps</b> would be <b>[1/2, 1/3, 1/6]</b>. The distribution <b> Cat({vs,ps})</b> tells you the probability of drawing a marble of each color.
+
+<b>Exercise:</b>
+Play around with the categorical distribution in the codebox below until you feel comfortable with it.
+
+<pre><code>
+var vs = ["good", "bad", "ugly"]
+var ps = [1/2, 1/3, 1/6]
+viz(Categorical({vs:vs, ps:ps}))
+categorical({vs:vs, ps:ps})
+</code></pre>
+
+<h4> The Dirichlet distribution </h4>
+The Dirichlet distribution, <b> Dirichlet(alpha) </b> is a probability distribution on vectors that could serve as <b>ps</b> for the categorical distribution -- i.e. n-dimensional vectors with nonnegative entries that sum to 1. We can think of Dirichlet as being a distribution on bags.
+</p>
+<p> 
+The n-dimensional parameter <b>alpha</b> affects which vectors are more likely to be drawn. If alpha is just (1,1,1,...,1), then all vectors (i.e. all kinds of bags) are equally likely. If you start with the prior <b>Dirichlet(1,1,1)</b>, set <b>vs</b> to be <b>["blue", "red", "green"]</b>, and draw a red marble from your bag, then your posterior on the distribution of marbles in the bag is <b>Dirichlet(1,2,1)</b>. If you then draw 60 blue marbles, 39 red marbles, and 20 green marbles, then you posterior on the distribution of marbles in the bag is <b>Dirichlet(61,41,21)</b>. That means you're pretty confident that the <b>ps</b> vector of the bag is close to <b>[1/2,1/3,16]</b> based on the data you observed.
+</p>
+
+<p>
+In the code below, the function <b>makeBag</b> returns a "bag of marbles": a categorical probability distribution where the <b>vs</b> are 5 colors, and the vector of probabilities 
+<b>ps = [q1, q2,...,q5]</b> is drawn from <b>Dirichlet(1,1,1,..1)</b>.  In other words, we have no idea what the color proportions are in this bag.
+</p>
+<p>
+<b> makeBag</b> has an input, which it remembers via <b>mem</b>. The input doesn't affect what <b>makeBag</b> does, but if you call it with the same input a second time, it produces the same distribution.
+</p>
+<b> Exercise: </b>play with the code and make sure it makes sense to you. 
+
+
+<pre><code>
+var colors = ['black', 'blue', 'green', 'orange', 'red'];
+
+var makeBag = mem(function(bagName){     
+    var colorProbs = dirichlet(ones([colors.length, 1]))
+    return Categorical({vs: colors, ps: colorProbs})
+  })
+
+
+var drawMarbles = function(bagName, numDraws){
+  var bag = makeBag(bagName);      // bag is a Categorical probability distribution
+  return repeat(numDraws, function(){return sample(bag)});
+}
+
+// the first three graphs should look similar, since you're drawing marbles from
+// the same bag. The last one should be totally different.
+viz(drawMarbles('bagA', 100))
+viz(drawMarbles('bagA', 100))
+viz(drawMarbles('bagA', 100))
+viz(drawMarbles('bagB', 100))
+</code></pre>
+
+
+The function <b> drawMarbles</b> above produces draws from a random bag of marbles. 
+This is our prior for where colored marbles come from. 
+
+<p>
+Now let's condition on some data! In the code below, we ask ourselves: 
+if I've seen some marbles from a bag, how do I update my probability 
+distribution on which marble will be picked next?
+</p>
+
+<b> Exercise: </b>play with the code and make sure it makes sense to you. 
+
+<pre><code>
+var colors = ['black', 'blue', 'green', 'orange', 'red'];
+
+var observedData = [
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'black'},
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'blue'},
+  
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'green'},
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'red'},
+  
+{bag: 'bag3', draw: 'blue'},
+{bag: 'bag3', draw: 'orange'}
+]
+
+var predictives = Infer({method: 'MCMC', samples: 20000}, function(){
+  var makeBag = mem(function(bagName){
+    var colorProbs = dirichlet(ones([colors.length, 1]))
+    return Categorical({vs: colors, ps: colorProbs})
+  })
+
+ // The observation function that we apply to each element of data 
+  var obsFn = function(datum){
+    observe(makeBag(datum.bag), datum.draw)
+  }
+  // This is how you apply a function to each element of a list
+  mapData({data: observedData}, obsFn)
+
+  return {bag1: sample(makeBag('bag1')),
+          bag2: sample(makeBag('bag2')),
+          bag3: sample(makeBag('bag3')),
+          bagN: sample(makeBag('bagN'))}
+})
+
+viz.marginals(predictives)
+</code></pre>
+
+
+<h2> Part 2 (more interesting!) coming soon. Check back in 30 minutes. </h2>
+
+<!-- ONLY EDIT ABOVE THIS --!>
+
+
+
+
+</body>
+
+<script>
+
+   // load scratch pad contents
+
+   $("#ed-scratch code").text(localStorage.getItem('ed-scratch'));
+
+   var scratchComp;
+   $("pre").map(function(i,el) {
+       var comp = wpEditor.setup(el, {language: "webppl"});
+       if (el.id == 'ed-scratch') {
+           scratchComp = comp;
+       }
+   });
+
+   // save scratch pad contents
+
+   window.onbeforeunload = function() { localStorage.setItem('ed-scratch', scratchComp.getCode()) }
+
+   var throwString = function() { throw 'string error' };
+  </script>
+
+
+  <script src="//s3-us-west-2.amazonaws.com/cdn.webppl.org/webppl-v0.9.7.js"></script>
+  
+</html>
