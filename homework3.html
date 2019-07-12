@@ -198,8 +198,10 @@ We can model this using a hierarchical model:
 <li> At the top is the Dirichlet distribution from which all the probability distributions in the bags are drawn. (We can think of this as the "factory" that produces the bags.)
 This distribution has a vector of parameters <b>alpha</b>, which has two important properties:
 <ul>
-<li> The relative size of its entries, which we call its <b>bias</b>. Large differences in size would make our bags generally biased toward one color or another. We can think of bias as a vector whose entries sum to 1. We have no prior opinion about the bias of our</li>
-<li> The sum of its entries, which we call the <b>strength</b>. When the strength is  high, the probability distributions for each bag will be more similar to each other (with the ratios of the q's close to the ratios of the corresponding entries of alpha). </li>
+<li> The relative size of its entries, which we call its <b>bias</b>. Large differences in size would make our bags generally biased toward one color or another. We can think of bias as a vector whose entries sum to 1. 
+We have no prior opinion about the bias of our "factory", so we draw it from <b>Dirichlet(1,1...1)</b>. 
+(This is an unusual use of Dirichlet: usually we use it to sample probabilities, The bias is not a probability, but it's a vector of nonnegative numbers that sum to 1, so Dirichlet is convenient.)</li>
+<li> The sum of the entries of <b>alpha</b>, which we call the <b>strength</b>. When the strength is  high, the probability distributions for all the bags will be very similar to each other (and to the bias of the Dirichlet). </li>
 </ul>
 <li> The next layer in the model are the bags themselves. Each bag corresponds to a distributions of colors (q1, q2, q3, q4, q5), drawn from Dirichlet(alpha). </li>
 <li> The final layer are the marbles you draw from the bags, with a different Multinomial distribution for each bag. This is the only layer that you actually get to observe -- everything else is inferred. </li>
