@@ -155,7 +155,8 @@ var observedData = [
 
 var predictives = Infer({method: 'MCMC', samples: 20000}, function(){
   var makeBag = mem(function(bagName){
-    var colorProbs = dirichlet(ones([colors.length, 1]))
+    var colorProbs = dirichlet(ones([colors.length, 1])) 
+// "ones([colors.length, 1])" means a vector of all 1's of the same length as the vector "colors"   
     return Categorical({vs: colors, ps: colorProbs})
   })
 
@@ -176,7 +177,132 @@ viz.marginals(predictives)
 </code></pre>
 
 
-<h2> Part 2 (more interesting!) coming soon. Check back in 30 minutes. </h2>
+<h4> The Gamma distributions </h4>
+<p>
+The family of Gamma distributions are distributions on nonnegative numbers. When you need to pick a "random positive number", you usually use a Gamma. But which one?
+</p>
+<p>
+The Gamma distribution has two parameters: <b>shape</b> and <b>scale</b>. The scale literally just rescales the x-axis; the shape actually changes the shape. The best way to see this is to play with some <a href= https://www.desmos.com/calculator/hxdo9v3bg8> Gammas on Desmos</a>.
+(In the demo, <b>a</b> is the shape, <b>b</b> is the scale, and the curves are not normalized; all of them need to be multiplied by some constant so that it integrates to 1.)
+</p>
+<p>
+The mean of <b>Gamma(shape:a, scale: b)</b> is <b>ab</b>. So when we want to choose a "random positive number" that is, on average, around 1 but could easily be much bigger or much smaller, we often use <b> Gamma(2,0.5)</b> as a prior. Since this is a pretty arbitrary choice, it is important in this case to check that the results don't depend too much on the choice of <b> a</b> and <b>b</b>; if you have enough data, your results should not be significantly affected. 
+</p>
+
+<h3> Part 2: Hierarchical models </h3> 
+
+Let;s get back to our bags of marbles. What if we suspect that the distributions of colors in the different bags are somehow related? Maybe they come from the same factory; or maybe the bags represent different students in the same class; or are somehow produced by similar processes.
+
+We can model this using a hierarchical model:
+<ul>
+<li> At the top is the Dirichlet distribution from which all the probability distributions in the bags are drawn. (We can think of this as the "factory" that produces the bags.)
+This distribution has a vector of parameters <b>alpha</b>, which has two important properties:
+<ul>
+<li> The relative size of its entries, which we call its <b>bias</b>. Large differences in size would make our bags generally biased toward one color or another. We can think of bias as a vector whose entries sum to 1. We have no prior opinion about the bias of our</li>
+<li> The sum of its entries, which we call the <b>strength</b>. When the strength is  high, the probability distributions for each bag will be more similar to each other (with the ratios of the q's close to the ratios of the corresponding entries of alpha). </li>
+</ul>
+<li> The next layer in the model are the bags themselves. Each bag corresponds to a distributions of colors (q1, q2, q3, q4, q5), drawn from Dirichlet(alpha). </li>
+<li> The final layer are the marbles you draw from the bags, with a different Multinomial distribution for each bag. This is the only layer that you actually get to observe -- everything else is inferred. </li>
+</ul>
+
+<p>
+Using such a model, let's see what we can infer about the bags from different kinds of data... 
+</p>
+<p>
+<b> Exercise: BEFORE YOU RUN THE CODE BELOW </b>, look at the data and try to guess what sorts of things the model will infer about bags 1,2, and 3, and also about a random bag from which we have seen no data yet.
+</p>
+
+
+<pre><code>
+var colors = ['black', 'blue', 'green', 'orange', 'red'];
+
+var observedData = [
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'black'},
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'blue'},
+  
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'green'},
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'blue'},
+{bag: 'bag2', draw: 'red'},
+  
+{bag: 'bag3', draw: 'blue'},
+{bag: 'bag3', draw: 'orange'}
+]
+
+var predictives = Infer({method: 'MCMC', samples: 20000}, function(){
+  // Construct the global Dirichlet distribution that all the bags come from
+  // What is our prior on its bias? Simply that all outcomes that sum to 1 are 
+  // equally likely.
+  var bias = dirichlet(ones([5, 1]))
+  // What about strength? This has to be a positive number. 
+  // The usual distribution people use when they need to pick a 
+  // "random positive numbers is 
+  var strength = gamma(2,2)  
+
+    gamma is a standard prior to use for random varibale
+  var global_parameters = T.mul(bias, strength)
+  // T.mul(d,x) multiplies the probabilities in `d` by x
+
+  var makeBag = mem(function(bag){
+    var colorProbs = dirichlet(global_parameters)
+    return Categorical({vs: colors, ps: colorProbs})
+  })
+
+  var obsFn = function(datum){
+    observe(makeBag(datum.bag), datum.draw)
+  }
+
+  mapData({data: observedData}, obsFn)
+
+  return {bag1: sample(makeBag('bag1')),
+          bag2: sample(makeBag('bag2')),
+          bag3: sample(makeBag('bag3')),
+          bagN: sample(makeBag('bagN')),
+          strength: strength}
+});
+
+viz.marginals(predictives)
+</code></pre>
+
+<p> <b> Exercise </b> Now try predicting what will happen when you replace the data you're 
+conditioning on by the following.
+</p>
+
+<pre><code>
+var NewData1 = [
+{bag: 'bag1', draw: 'blue'}, {bag: 'bag1', draw: 'blue'}, {bag: 'bag1', draw: 'blue'},
+{bag: 'bag1', draw: 'blue'}, {bag: 'bag1', draw: 'blue'}, {bag: 'bag1', draw: 'blue'},
+{bag: 'bag2', draw: 'green'}, {bag: 'bag2', draw: 'green'}, {bag: 'bag2', draw: 'green'},
+{bag: 'bag2', draw: 'green'}, {bag: 'bag2', draw: 'green'}, {bag: 'bag2', draw: 'green'},
+{bag: 'bag3', draw: 'red'}, {bag: 'bag3', draw: 'red'}, {bag: 'bag3', draw: 'red'},
+{bag: 'bag3', draw: 'red'}, {bag: 'bag3', draw: 'red'}, {bag: 'bag3', draw: 'red'},
+{bag: 'bag4', draw: 'orange'}]
+
+var NewData2 = [
+{bag: 'bag1', draw: 'blue'}, {bag: 'bag1', draw: 'red'}, {bag: 'bag1', draw: 'green'},
+{bag: 'bag1', draw: 'black'}, {bag: 'bag1', draw: 'red'}, {bag: 'bag1', draw: 'blue'},
+{bag: 'bag2', draw: 'green'}, {bag: 'bag2', draw: 'red'}, {bag: 'bag2', draw: 'black'},
+{bag: 'bag2', draw: 'black'}, {bag: 'bag2', draw: 'blue'}, {bag: 'bag2', draw: 'green'},
+{bag: 'bag3', draw: 'red'}, {bag: 'bag3', draw: 'green'}, {bag: 'bag3', draw: 'blue'},
+{bag: 'bag3', draw: 'blue'}, {bag: 'bag3', draw: 'black'}, {bag: 'bag3', draw: 'green'},
+{bag: 'bag4', draw: 'orange'}]
+
+</code></pre>
+<p> <b> Exercise:</b> Try playing with the Gamma parameters in the distribution for <b>strength</b>.
+See how it affects the results. Also, see how the data affect the posterior distribution of
+<b>strength.</b> (You can use either <b>viz</b> separately to see what your Gamma prior for strength looks like.)
+
+
+
+
+
+
 
 <!-- ONLY EDIT ABOVE THIS --!>
 
