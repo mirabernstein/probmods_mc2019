@@ -240,14 +240,14 @@ var observedData = [
 var predictives = Infer({method: 'MCMC', samples: 20000}, function(){
   // Construct the global Dirichlet distribution that all the bags come from
   // What is our prior on its bias? Simply that all outcomes that sum to 1 are 
-  // equally likely.
+  // equally likely. So we use Dir(1,1,1,1,1).
   var bias = dirichlet(ones([5, 1]))
   // What about strength? This has to be a positive number. 
   // The usual distribution people use when they need to pick a 
-  // "random positive numbers is 
-  var strength = gamma(2,2)  
+  // "random positive numbers is gamma(2,0.5). If we wanted to assume more strength,
+  // we could use a larger scale parameter.
+  var strength = gamma(2,0.5)  
 
-    gamma is a standard prior to use for random varibale
   var global_parameters = T.mul(bias, strength)
   // T.mul(d,x) multiplies the probabilities in `d` by x
 
@@ -265,6 +265,7 @@ var predictives = Infer({method: 'MCMC', samples: 20000}, function(){
   return {bag1: sample(makeBag('bag1')),
           bag2: sample(makeBag('bag2')),
           bag3: sample(makeBag('bag3')),
+          bag4: sample(makeBag('bag4')),
           bagN: sample(makeBag('bagN')),
           strength: strength}
 });
